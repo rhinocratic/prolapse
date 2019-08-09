@@ -1,9 +1,6 @@
 extern crate chrono;
 extern crate signal_hook;
 
-use prolapse::*;
-use std::process::Command;
-
 fn main() {
     do_stuff();
 
@@ -20,4 +17,10 @@ fn main() {
     //     .expect("Oh bollocks");
 }
 
-fn do_stuff() {}
+fn action() {
+    println!("Did something at {:?}", std::time::Instant::now());
+}
+
+fn do_stuff() {
+    prolapse::do_things(2019, 8, 9, 53.8021, -2.3157, 90.0 + 5.0 / 6.0, 10000, &action);
+}
