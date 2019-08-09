@@ -1,11 +1,10 @@
 use std::f64::consts::PI;
-use chrono::{NaiveDate, Datelike, Timelike, UTC};
+use chrono::{NaiveDate, Datelike};
 
 pub const OFFICIAL: f64 = (90.0 + 5.0 / 6.0);
 pub const CIVIL: f64 = 90.0;
 pub const NAUTICAL: f64 = 102.0;
 pub const ASTRONOMICAL: f64 = 108.0;
-const JULIAN_YEAR: F64 =
 
 fn sin_deg(degrees: f64) -> f64 {
     (degrees * PI / 180.0).sin()
@@ -47,6 +46,10 @@ fn constrain_hours(hours: f64) -> f64 {
     }
 }
 
+fn day_of_year(y:i32, m: u32, d: u32) -> u32 {
+    NaiveDate::from_ymd(y, m, d).ordinal()
+}
+
 fn cos_hour_angle(observer_latitude: f64, sun_declination: f64) -> f64 {
     - observer_latitude.tan() * sun_declination.tan()
 }
@@ -73,6 +76,13 @@ fn degrees_to_time(angle: f64) -> (u32, u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_day_of_year() {
+        assert_eq!(61, day_of_year(2000, 3, 1));
+        assert_eq!(60, day_of_year(1900, 3, 1));
+        assert_eq!(366, day_of_year(2008, 12, 31));
+    }
 
     #[test]
     fn test_degrees_to_time() {

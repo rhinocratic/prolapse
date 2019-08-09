@@ -1,4 +1,3 @@
-extern crate astro;
 extern crate chrono;
 extern crate signal_hook;
 
