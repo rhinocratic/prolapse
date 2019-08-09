@@ -3,11 +3,6 @@ use std::time::Duration;
 use std::f64::consts::PI;
 use chrono::{DateTime, NaiveDate, Datelike, Utc};
 
-pub const OFFICIAL: f64 = (90.0 + 5.0 / 6.0);
-pub const CIVIL: f64 = 90.0;
-pub const NAUTICAL: f64 = 102.0;
-pub const ASTRONOMICAL: f64 = 108.0;
-
 fn sin_deg(degrees: f64) -> f64 {
     (degrees * PI / 180.0).sin()
 }
@@ -131,20 +126,26 @@ pub fn sunset(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64)
 
 pub fn do_things(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &Fn()) {
     let mut rise = sunrise(y, m, d, latitude, longitude, zenith);
-    let mut set = sunrise(y, m, d, latitude, longitude, zenith);
+    let mut set = sunset(y, m, d, latitude, longitude, zenith);
     let mut now = Utc::now();
     let period = Duration::from_millis(period_millis);
+    println!("{} | {} | {}", rise, set, now);
+    println!("{}", now > rise);
+    println!("{}", now < set);
     loop {
         if now > rise && now < set {
+            println!("It's light - doing things.");
             while now > rise && now < set {
                 action();
                 thread::sleep(period);
                 now = Utc::now();
             }
         } else if now < rise {
+            println!("It's before dawn - waiting to do things.");
             let dur = (rise - now).to_std().expect("Oh bollocks");
             thread::sleep(dur);
         } else {
+            println!("It's after sunset - waiting to do things.");
             rise = sunrise(y, m, d + 1, latitude, longitude, zenith);
             set = sunrise(y, m, d + 1, latitude, longitude, zenith);
             let dur = (rise - now).to_std().expect("Oh bollocks");
