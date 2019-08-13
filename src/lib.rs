@@ -101,8 +101,7 @@ fn event_time(approx_time: f64, local_event_time: f64, longitude: f64) -> f64 {
     let ut = local_mean_time - longitude / 15.0;
     let ut = if ut < 0.0 { ut + 24.0 } else { ut };
     let ut = if ut > 24.0 { ut - 24.0 } else { ut };
-    let local_time = ut + 0.0;
-    local_time
+    ut
 }
 
 pub fn sunrise(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64) -> DateTime<Utc> {
@@ -120,7 +119,6 @@ pub fn sunset(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64)
     let t = event_time(at, h, longitude);
     let (hr, min, sec) = hours_to_hms(t);
     let dt = NaiveDate::from_ymd(y, m, d).and_hms(hr, min, sec);
-    println!("{}", Utc::now());
     DateTime::<Utc>::from_utc(dt, Utc)
 }
 
@@ -129,23 +127,18 @@ pub fn do_things(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f
     let mut set = sunset(y, m, d, latitude, longitude, zenith);
     let mut now = Utc::now();
     let period = Duration::from_millis(period_millis);
-    println!("{} | {} | {}", rise, set, now);
-    println!("{}", now > rise);
-    println!("{}", now < set);
     loop {
+        println!("Doing things between {} and {}", rise, set);
         if now > rise && now < set {
-            println!("It's light - doing things.");
             while now > rise && now < set {
                 action();
                 thread::sleep(period);
                 now = Utc::now();
             }
         } else if now < rise {
-            println!("It's before dawn - waiting to do things.");
             let dur = (rise - now).to_std().expect("Oh bollocks");
             thread::sleep(dur);
         } else {
-            println!("It's after sunset - waiting to do things.");
             rise = sunrise(y, m, d + 1, latitude, longitude, zenith);
             set = sunrise(y, m, d + 1, latitude, longitude, zenith);
             let dur = (rise - now).to_std().expect("Oh bollocks");

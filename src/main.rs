@@ -1,43 +1,49 @@
 extern crate clap;
 extern crate chrono;
-extern crate signal_hook;
 
 use std::process::Command;
 use clap::{Arg, App};
-use chrono::{Utc, SecondsFormat, Datelike};
+use chrono::{Utc, Datelike};
 
 pub const OFFICIAL: f64 = (90.0 + 5.0 / 6.0);
-pub const CIVIL: f64 = 90.0;
+pub const CIVIL: f64 = 96.0;
 pub const NAUTICAL: f64 = 102.0;
 pub const ASTRONOMICAL: f64 = 108.0;
 
 fn main() {
     let matches = App::new("prolapse")
+        .version("1.0")
         .arg(Arg::with_name("lat")
-            .short("lat")
+            .short("l")
             .long("latitude")
             .help("The latitude of the camera in degrees")
+            .takes_value(true)
+            .allow_hyphen_values(true)
             .required(true))
         .arg(Arg::with_name("lon")
-            .short("lon")
+            .short("o")
             .long("longitude")
             .help("The longitude of the camera in degrees")
+            .takes_value(true)
+            .allow_hyphen_values(true)
             .required(true))
-        .arg(Arg::with_name("zenith")
-            .short("zenith")
+        .arg(Arg::with_name("zen")
+            .short("z")
             .long("zenith")
             .help("The zenith for the desired type of sunset/sunrise - can be one of \"official\" (default), \"civil\", \"nautical\" or \"astronomical\"")
+            .takes_value(true)
             .required(false))
-        .arg(Arg::with_name("period")
+        .arg(Arg::with_name("per")
             .short("p")
-            .long("period_millis")
+            .long("period")
             .help("The period (in milliseconds) between shots.")
+            .takes_value(true)
             .required(true))
         .get_matches();
     let now = Utc::now();
     let lat = matches.value_of("lat").unwrap().parse().unwrap();
-    let lon = matches.value_of("lat").unwrap().parse().unwrap();
-    let zenith = matches.value_of("zenith").unwrap().to_lowercase();
+    let lon = matches.value_of("lon").unwrap().parse().unwrap();
+    let zenith = matches.value_of("zen").unwrap().to_lowercase();
     let zenith = match zenith.as_ref() {
         "official" => OFFICIAL,
         "civil" => CIVIL,
@@ -45,18 +51,12 @@ fn main() {
         "astromomical" => ASTRONOMICAL,
         _ => OFFICIAL
     };
-    let period = matches.value_of("period").unwrap().parse().unwrap();
-    prolapse::do_things(now.year(), now.month(), now.day(), lat, lon, zenith, period, &action);
+    let period = matches.value_of("per").unwrap().parse().unwrap();
+    prolapse::do_things(now.year(), now.month(), now.day(), lat, lon, zenith, period, &(|| take_picture()));
 }
 
 fn take_picture() {
-    let fopt = format!("-o /home/pi/camera/{}.jpg", Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true));
-    Command::new("raspistill")
-        .arg(fopt)
+    Command::new("takepic")
         .spawn()
         .expect("Oh bollocks");
-}
-
-fn action() {
-    take_picture();
 }
