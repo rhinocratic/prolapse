@@ -140,7 +140,7 @@ pub fn do_things(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f
             thread::sleep(dur);
         } else {
             rise = sunrise(y, m, d + 1, latitude, longitude, zenith);
-            set = sunrise(y, m, d + 1, latitude, longitude, zenith);
+            set = sunset(y, m, d + 1, latitude, longitude, zenith);
             let dur = (rise - now).to_std().expect("Oh bollocks");
             thread::sleep(dur);
         }
