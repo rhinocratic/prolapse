@@ -129,10 +129,13 @@ enum TaskResult {
 
 fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>, action: &Fn()) -> TaskResult {
     if current < start {
+        println!("early: {}", current);
         TaskResult::Early
     } else if current > end {
+        println!("late: {}", current);
         TaskResult::Late
     } else {
+        println!("executed: {}", current);
         action();
         TaskResult::Executed
     }
@@ -146,7 +149,7 @@ pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, 
     let period = std::time::Duration::from_millis(period_millis);
     println!("Doing stuff from {} to {}", rise, set);
     loop {
-        let res = perform_task(rise, set, now, action);
+        let res = perform_task(rise, set, Utc::now(), action);
         match res {
             TaskResult::Early => { },
             TaskResult::Late => {
