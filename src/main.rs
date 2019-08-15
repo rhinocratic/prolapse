@@ -3,7 +3,6 @@ extern crate chrono;
 
 use std::process::Command;
 use clap::{Arg, App};
-use chrono::{Utc, Datelike};
 
 pub const OFFICIAL: f64 = (90.0 + 5.0 / 6.0);
 pub const CIVIL: f64 = 96.0;
@@ -30,7 +29,7 @@ fn main() {
         .arg(Arg::with_name("zen")
             .short("z")
             .long("zenith")
-            .help("The zenith for the desired type of sunset/sunrise - can be one of \"official\" (default), \"civil\", \"nautical\" or \"astronomical\"")
+            .help("The zenith for the desired type of sunset/sunrise - can be one of \"official\" (default), \"civil\", \"nautical\", \"astronomical\" or a custom angle (in degrees)")
             .takes_value(true)
             .required(false))
         .arg(Arg::with_name("per")
@@ -39,8 +38,13 @@ fn main() {
             .help("The period (in milliseconds) between shots.")
             .takes_value(true)
             .required(true))
+        .arg(Arg::with_name("action")
+            .short("a")
+            .long("action")
+            .help("The (parameterless) command to be invoked.")
+            .takes_value(true)
+            .required(true))
         .get_matches();
-    let now = Utc::now();
     let lat = matches.value_of("lat").unwrap().parse().unwrap();
     let lon = matches.value_of("lon").unwrap().parse().unwrap();
     let zenith = matches.value_of("zen").unwrap().to_lowercase();
@@ -49,14 +53,15 @@ fn main() {
         "civil" => CIVIL,
         "nautical" => NAUTICAL,
         "astromomical" => ASTRONOMICAL,
-        _ => OFFICIAL
+        x => x.parse::<f64>().unwrap()
     };
     let period = matches.value_of("per").unwrap().parse().unwrap();
-    prolapse::do_things(now.year(), now.month(), now.day(), lat, lon, zenith, period, &(|| take_picture()));
+    let action = matches.value_of("action").unwrap();
+    prolapse::schedule(lat, lon, zenith, period, &(|| act(action)));
 }
 
-fn take_picture() {
-    Command::new("takepic")
+fn act(action: &str) {
+    Command::new(action)
         .spawn()
         .expect("Oh bollocks");
 }

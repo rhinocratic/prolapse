@@ -1,5 +1,4 @@
 use std::thread;
-use std::time::Duration;
 use std::f64::consts::PI;
 use chrono::{DateTime, NaiveDate, Datelike, Utc};
 
@@ -122,27 +121,42 @@ pub fn sunset(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64)
     DateTime::<Utc>::from_utc(dt, Utc)
 }
 
-pub fn do_things(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &Fn()) {
-    let mut rise = sunrise(y, m, d, latitude, longitude, zenith);
-    let mut set = sunset(y, m, d, latitude, longitude, zenith);
-    let mut now = Utc::now();
-    let period = Duration::from_millis(period_millis);
+enum TaskResult {
+    Early,
+    Late,
+    Executed
+}
+
+fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>, action: &Fn()) -> TaskResult {
+    if current < start {
+        TaskResult::Early
+    } else if current > end {
+        TaskResult::Late
+    } else {
+        action();
+        TaskResult::Executed
+    }
+}
+
+pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &Fn()) {
+    let now = Utc::now();
+    let mut noon = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(now.year(), now.month(), now.day()).and_hms(12, 0, 0), Utc);
+    let mut rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
+    let mut set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
+    let period = std::time::Duration::from_millis(period_millis);
+    println!("Doing stuff from {} to {}", rise, set);
     loop {
-        println!("Doing things between {} and {}", rise, set);
-        if now > rise && now < set {
-            while now > rise && now < set {
-                action();
-                thread::sleep(period);
-                now = Utc::now();
-            }
-        } else if now < rise {
-            let dur = (rise - now).to_std().expect("Oh bollocks");
-            thread::sleep(dur);
-        } else {
-            rise = sunrise(y, m, d + 1, latitude, longitude, zenith);
-            set = sunset(y, m, d + 1, latitude, longitude, zenith);
-            let dur = (rise - now).to_std().expect("Oh bollocks");
-            thread::sleep(dur);
+        let res = perform_task(rise, set, now, action);
+        match res {
+            TaskResult::Early => { },
+            TaskResult::Late => {
+                noon = noon + chrono::Duration::days(1);
+                rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
+                set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
+                println!("Incremented date: doing stuff from {} to {}", rise, set);
+            },
+            TaskResult::Executed => { }
         }
+        thread::sleep(period);
     }
 }
