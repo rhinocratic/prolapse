@@ -121,45 +121,77 @@ pub fn sunset(y:i32, m: u32, d: u32, latitude: f64, longitude: f64, zenith: f64)
     DateTime::<Utc>::from_utc(dt, Utc)
 }
 
-enum TaskResult {
+#[derive(Debug, PartialEq)]
+enum TimeOfDay {
     Early,
     Late,
-    Executed
+    Day
 }
 
-fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>, action: &Fn()) -> TaskResult {
+fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>) -> TimeOfDay {
     if current < start {
-        println!("early: {}", current);
-        TaskResult::Early
+        TimeOfDay::Early
     } else if current > end {
-        println!("late: {}", current);
-        TaskResult::Late
+        TimeOfDay::Late
     } else {
-        println!("executed: {}", current);
-        action();
-        TaskResult::Executed
+        TimeOfDay::Day
     }
 }
 
 pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &Fn()) {
-    let now = Utc::now();
+    let mut now = Utc::now();
     let mut noon = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(now.year(), now.month(), now.day()).and_hms(12, 0, 0), Utc);
     let mut rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
     let mut set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
     let period = std::time::Duration::from_millis(period_millis);
     println!("Doing stuff from {} to {}", rise, set);
     loop {
-        let res = perform_task(rise, set, Utc::now(), action);
+        let res = perform_task(rise, set, now);
         match res {
-            TaskResult::Early => { },
-            TaskResult::Late => {
+            TimeOfDay::Early => {
+                println!("early: {}", now);
+            },
+            TimeOfDay::Late => {
                 noon = noon + chrono::Duration::days(1);
                 rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
                 set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
+                println!("late: {}", now);
                 println!("Incremented date: doing stuff from {} to {}", rise, set);
             },
-            TaskResult::Executed => { }
+            TimeOfDay::Day => {
+                action();
+                println!("executed: {}", now);
+            }
         }
         thread::sleep(period);
+        now = Utc::now();
     }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_perform_task() {
+        let start = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2019, 05, 01).and_hms(12, 0, 0), Utc);
+        let end = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2019, 05, 01).and_hms(13, 0, 0), Utc);
+
+        // Early
+        let present = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2019, 05, 01).and_hms(11, 0, 0), Utc);
+        let res = perform_task(start, end, present);
+        assert_eq!(res, TimeOfDay::Early);
+
+        // Late
+        let present = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2019, 05, 01).and_hms(14, 0, 0), Utc);
+        let res = perform_task(start, end, present);
+        assert_eq!(res, TimeOfDay::Late);
+
+        // Executed
+        let present = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2019, 05, 01).and_hms(12, 30, 0), Utc);
+        let res = perform_task(start, end, present);
+        assert_eq!(res, TimeOfDay::Day);
+    }
+
 }
