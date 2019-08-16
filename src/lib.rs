@@ -144,7 +144,7 @@ pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, 
     let mut rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
     let mut set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
     let period = std::time::Duration::from_millis(period_millis);
-    println!("Doing stuff from {} to {}", rise, set);
+    println!("Daylight from {} to {}", rise, set);
     loop {
         let res = perform_task(rise, set, now);
         match res {
@@ -156,7 +156,7 @@ pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, 
                 rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
                 set = sunset(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
                 println!("late: {}", now);
-                println!("Incremented date: doing stuff from {} to {}", rise, set);
+                println!("Incremented date: Daylight from {} to {}", rise, set);
             },
             TimeOfDay::Day => {
                 action();
