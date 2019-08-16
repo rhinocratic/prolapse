@@ -160,7 +160,7 @@ pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, 
             },
             TimeOfDay::Day => {
                 action();
-                println!("executed: {}", now);
+                println!("daytime: {}", now);
             }
         }
         thread::sleep(period);
