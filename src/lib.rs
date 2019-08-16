@@ -146,7 +146,7 @@ pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, 
     let period = std::time::Duration::from_millis(period_millis);
     println!("Doing stuff from {} to {}", rise, set);
     loop {
-        let res = perform_task(rise, set, now, action);
+        let res = perform_task(rise, set, Utc::now(), action);
         match res {
             TaskResult::Early => { },
             TaskResult::Late => {
