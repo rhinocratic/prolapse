@@ -129,10 +129,13 @@ enum TaskResult {
 
 fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>, action: &Fn()) -> TaskResult {
     if current < start {
+        println!("early: {}", current);
         TaskResult::Early
     } else if current > end {
+        println!("late: {}", current);
         TaskResult::Late
     } else {
+        println!("executed: {}", current);
         action();
         TaskResult::Executed
     }
