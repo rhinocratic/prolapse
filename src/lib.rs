@@ -138,7 +138,7 @@ fn perform_task(start: DateTime<Utc>, end: DateTime<Utc>, current: DateTime<Utc>
     }
 }
 
-pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &Fn()) {
+pub fn schedule(latitude: f64, longitude: f64, zenith: f64, period_millis: u64, action: &dyn Fn()) {
     let mut now = Utc::now();
     let mut noon = DateTime::<Utc>::from_utc(NaiveDate::from_ymd(now.year(), now.month(), now.day()).and_hms(12, 0, 0), Utc);
     let mut rise = sunrise(noon.year(), noon.month(), noon.day(), latitude, longitude, zenith);
